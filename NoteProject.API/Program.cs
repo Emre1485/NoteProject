@@ -1,5 +1,6 @@
 using Carter;
 using FluentValidation;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -18,11 +19,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("SqlConnection"));
 });
+
 var assembly = typeof(Program).Assembly;
 builder.Services.AddMediatR(config => config.RegisterServicesFromAssemblies(assembly));
 
 builder.Services.AddCarter();
 builder.Services.AddValidatorsFromAssembly(assembly);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

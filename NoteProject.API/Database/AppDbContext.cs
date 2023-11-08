@@ -11,5 +11,6 @@ namespace NoteProject.API.Database
 
         public DbSet<Course> Courses { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<FileDetails> Notes { get; set; }
     }
 }
