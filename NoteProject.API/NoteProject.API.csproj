@@ -27,7 +27,6 @@
 
   <ItemGroup>
     <Folder Include="Extensions\" />
-    <Folder Include="Features\Notes\Queries\" />
   </ItemGroup>
 
 </Project>

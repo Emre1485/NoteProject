@@ -10,6 +10,6 @@ namespace NoteProject.API.Entities
         [EmailAddress(ErrorMessage ="Lütfen geçerli bir Email adresi giriniz")]
         public string Email { get; set; }
         public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
-
+        public ICollection<Note> Notes { get; set; }
     }
 }

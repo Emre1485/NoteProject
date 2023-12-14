@@ -1,113 +1,81 @@
 ﻿using Carter;
 using FluentValidation;
-using Mapster;
 using MediatR;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using NoteProject.API.Contracts.Note;
 using NoteProject.API.Database;
 using NoteProject.API.Entities;
 using NoteProject.API.Shared;
-using System;
-using System.Reflection;
 
 namespace NoteProject.API.Features.Notes.Commands;
 
-public static class CreateNote
-{
-    public class Command : IRequest<Result<Guid>>
-    {
-        public string FileName { get; set; }
-
-        public byte[] FileData { get; set; }
-        //public IFormFile FileData { get; set; }
-        public FileType FileType { get; set; }
-    }
-
-    public class Validator : AbstractValidator<Command>
-    {
-        public Validator()
-        {
-            RuleFor(n => n.FileName).NotEmpty();
-            RuleFor(n => n.FileData).NotNull();
-            RuleFor(n => n.FileType).IsInEnum();
-        }
-    }
-
-    internal sealed class Handler : IRequestHandler<Command, Result<Guid>>
-    {
-        private readonly AppDbContext _context;
-        private readonly IValidator<Command> _validator;
-
-        public Handler(AppDbContext context, IValidator<Command> validator)
-        {
-            _context = context;
-            _validator = validator;
-        }
-
-        public async Task<Result<Guid>> Handle(Command request, CancellationToken cancellationToken)
-        {
-            var validationResult = _validator.Validate(request);
-
-            if (!validationResult.IsValid)
-            {
-                return Result.Failure<Guid>(new Error(
-                    "CreateNote.Validation",
-                    validationResult.ToString()));
-            }
-
-            if (request.FileData != null && request.FileData.Length > 0)
-            {
-                var fileName = request.FileName;
-                var fileType = request.FileType;
-                //using (var stream = new MemoryStream(request.FileData))
-                //{
-
-                    var fileEntity = new FileDetails
-                    {
-                        Id = Guid.NewGuid(),
-                        FileName = fileName,
-                        FileType = fileType,
-                        FileData = request.FileData
-                    };
-
-                    _context.Notes.Add(fileEntity);
-                    await _context.SaveChangesAsync(cancellationToken);
-
-                    return Result.Success(fileEntity.Id);
-                //}
-                
-            }
-
-            else
-            {
-                return Result.Failure<Guid>(new Error("CreateNote.Validation", "Dosya eksik veya boş."));
-            }
-
-
-        }
-    }
-}
-
-public class CreateNoteEndPoint : ICarterModule
+public class CreateNodeEndPoint : ICarterModule
 {
     public void AddRoutes(IEndpointRouteBuilder app)
     {
-        app.MapPost("api/notes", async (CreateNoteRequest request, ISender sender) =>
+
+        app.MapPost("/api/notes", async (HttpRequest request, AppDbContext dbContext, IFileService _fileService) =>
         {
-
-            var command = request.Adapt<CreateNote.Command>();
-
-            var result = await sender.Send(command);
-
-            if (!result.IsSuccess)
+            try
             {
-                return Results.BadRequest(result.Error);
-            }
+                if (!request.HasFormContentType)
+                {
+                    return Results.BadRequest("Request must be of type 'multipart/form-data'.");
+                }
 
-            return Results.Ok(result.Value);
+                var form = await request.ReadFormAsync();
+
+                // Dosya adını ve dosyayı formdan al
+                var noteName = form["NoteName"];
+                var file = form.Files["NoteItself"];
+                //var courseId = dbContext.Courses.First().Id;
+                //var userId = dbContext.Users.First().Id;
+                var courseIdStr = form["CourseId"];      // yeni
+                var userIdStr = form["UserId"];          // yeni
+
+                if (string.IsNullOrWhiteSpace(noteName))
+                {
+                    return Results.BadRequest("NoteName is required.");
+                }
+                
+                //yeni
+                if (!Guid.TryParse(courseIdStr, out var courseId) || !Guid.TryParse(userIdStr, out var userId))
+                {
+                    return Results.BadRequest("Invalid courseId or userId format.");
+                }
+
+                if (file == null || file.Length == 0)
+                {
+                    return Results.BadRequest("NoteItself file is required.");
+                }
+
+                // Dosyayı kaydet
+                var fileName = await _fileService.SaveFileAsync(file,noteName);
+
+                // Not objesini oluştur
+                var note = new Note
+                {
+                    Id = Guid.NewGuid(),
+                    NoteName = noteName,
+                    NoteDescription = form["NoteDescription"],
+                    CreatedDate = DateTime.Now,
+                    NoteFilePath = fileName,
+                    CourseId = courseId,
+                    UserId = userId
+                };
+
+                // Veritabanına ekle
+                dbContext.Notes.Add(note);
+                await dbContext.SaveChangesAsync();
+
+                return Results.Ok($"File saved successfully. FileName: {fileName}");
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest($"An error occurred: {ex.Message}");
+            }
         });
     }
+
 }

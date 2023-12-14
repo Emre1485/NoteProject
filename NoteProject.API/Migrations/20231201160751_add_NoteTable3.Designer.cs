@@ -12,8 +12,8 @@ using NoteProject.API.Database;
 namespace NoteProject.API.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20231027002600_add_Notes_Table")]
-    partial class add_Notes_Table
+    [Migration("20231201160751_add_NoteTable3")]
+    partial class add_NoteTable3
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,26 +46,43 @@ namespace NoteProject.API.Migrations
                     b.ToTable("Courses");
                 });
 
-            modelBuilder.Entity("NoteProject.API.Entities.FileDetails", b =>
+            modelBuilder.Entity("NoteProject.API.Entities.Note", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<byte[]>("FileData")
-                        .IsRequired()
-                        .HasColumnType("varbinary(max)");
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("FileName")
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("NoteDescription")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("FileType")
+                    b.Property<string>("NoteFilePath")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("NoteName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NotePoint")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.ToTable("FileDetails");
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notes");
                 });
 
             modelBuilder.Entity("NoteProject.API.Entities.User", b =>
@@ -92,6 +109,35 @@ namespace NoteProject.API.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("NoteProject.API.Entities.Note", b =>
+                {
+                    b.HasOne("NoteProject.API.Entities.Course", "Course")
+                        .WithMany("Notes")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("NoteProject.API.Entities.User", "User")
+                        .WithMany("Notes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("NoteProject.API.Entities.Course", b =>
+                {
+                    b.Navigation("Notes");
+                });
+
+            modelBuilder.Entity("NoteProject.API.Entities.User", b =>
+                {
+                    b.Navigation("Notes");
                 });
 #pragma warning restore 612, 618
         }

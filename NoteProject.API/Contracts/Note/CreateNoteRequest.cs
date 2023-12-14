@@ -1,11 +1,10 @@
-﻿using NoteProject.API.Entities;
-
-namespace NoteProject.API.Contracts.Note
+﻿namespace NoteProject.API.Contracts.Note
 {
     public class CreateNoteRequest
     {
-        public string FileName { get; set; }
-        public byte[] FileData { get; set; }
-        public FileType FileType { get; set; }
+        public string NoteName { get; set; }
+        public IFormFile NoteItself { get; set; }
+        public string NoteDescription { get; set; } = string.Empty;
+        public DateTime CreatedDate { get; set; }
     }
 }
