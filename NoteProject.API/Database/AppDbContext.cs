@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NoteProject.API.Entities;
 
 namespace NoteProject.API.Database
 {
-    public class AppDbContext : DbContext
+    public class AppDbContext : IdentityDbContext<AppUser,AppRole,string>
     {
         public IQueryable<Note> GetNotesByCourseName(string courseName)
         {
@@ -19,7 +20,6 @@ namespace NoteProject.API.Database
         }
 
         public DbSet<Course> Courses { get; set; }
-        public DbSet<User> Users { get; set; }
         public DbSet<Note> Notes { get; set; }
     }
 }

@@ -7,11 +7,17 @@ using NoteProject.API.Contracts.Note;
 using NoteProject.API.Database;
 using NoteProject.API.Entities;
 using NoteProject.API.Shared;
+using System.Security.Claims;
 
 namespace NoteProject.API.Features.Notes.Commands;
 
 public class CreateNodeEndPoint : ICarterModule
 {
+    private readonly IHttpContextAccessor _httpContextAccessor;
+    public CreateNodeEndPoint(IHttpContextAccessor httpContextAccessor)
+    {
+        _httpContextAccessor = httpContextAccessor;
+    }
     public void AddRoutes(IEndpointRouteBuilder app)
     {
 
@@ -19,6 +25,8 @@ public class CreateNodeEndPoint : ICarterModule
         {
             try
             {
+                //var userId = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userId = "bf459ad6-893e-4c2c-bd26-c124a42ea632";
                 if (!request.HasFormContentType)
                 {
                     return Results.BadRequest("Request must be of type 'multipart/form-data'.");
@@ -32,22 +40,22 @@ public class CreateNodeEndPoint : ICarterModule
                 //var courseId = dbContext.Courses.First().Id;
                 //var userId = dbContext.Users.First().Id;
                 var courseIdStr = form["CourseId"];      // yeni
-                var userIdStr = form["UserId"];          // yeni
+                //var userIdStr = form["UserId"];          // yeni
 
                 if (string.IsNullOrWhiteSpace(noteName))
                 {
-                    return Results.BadRequest("NoteName is required.");
+                    return Results.BadRequest("Note is required.");
                 }
                 
                 //yeni
-                if (!Guid.TryParse(courseIdStr, out var courseId) || !Guid.TryParse(userIdStr, out var userId))
+                if (!Guid.TryParse(courseIdStr, out var courseId) /* || !Guid.TryParse(userIdStr, out var userId)*/)
                 {
-                    return Results.BadRequest("Invalid courseId or userId format.");
+                    return Results.BadRequest("Invalid courseId.");
                 }
 
                 if (file == null || file.Length == 0)
                 {
-                    return Results.BadRequest("NoteItself file is required.");
+                    return Results.BadRequest("Note file is required.");
                 }
 
                 // Dosyayı kaydet

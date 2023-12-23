@@ -6,6 +6,7 @@ namespace NoteProject.API.Shared
     {
         Task<string> SaveFileAsync(IFormFile file, string noteName);
         void DeleteFile(string filePath);
+        Task<(Stream, string)> DownloadFileAsync(string filePath);
     }
     public class FileService : IFileService
     {
@@ -20,6 +21,19 @@ namespace NoteProject.API.Shared
             {
                 File.Delete(fullPath);
             }
+        }
+
+        public async Task<(Stream, string)> DownloadFileAsync(string filePath)
+        {
+            var fullPath = Path.Combine(_uploadDirectory, filePath);
+
+            if (!File.Exists(fullPath))
+            {
+                return (null, null);
+            }
+
+            var stream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            return (stream, fullPath);
         }
 
         public async Task<string> SaveFileAsync(IFormFile file, string noteName)
